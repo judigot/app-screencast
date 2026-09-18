@@ -1,0 +1,21 @@
+{
+  "name": "app-screencast",
+  "version": "0.1.0",
+  "description": "Playwright screencast toolkit for polished web app demo videos — fake pointer, labels, ffmpeg export.",
+  "type": "module",
+  "private": false,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "test:install": "playwright install --with-deps chromium",
+    "record:pointer": "bash record-test-pointer.sh",
+    "record:pointer-variants": "bash record-pointer-variants.sh"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}
