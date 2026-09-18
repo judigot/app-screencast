@@ -28,17 +28,6 @@ export SCREENCAST_APP_DIR=/path/to/your-app
 bash record-test-video.sh   # example: login flow demo → ~/test-video.mp4
 ```
 
-Legacy env names **`EVIDENCE_APP_DIR`** / **`EVIDENCE_DIR`** still work (used by mcw-app).
-
-### MyCarWash example
-
-Clone this repo next to `mcw-app`, or set:
-
-```bash
-export SCREENCAST_APP_DIR=/path/to/mcw-app/app
-bash record-inactive-washer-video.sh
-```
-
 ## Layout
 
 | Path | Role |

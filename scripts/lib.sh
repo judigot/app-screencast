@@ -7,14 +7,6 @@ resolve_screencast_app_dir() {
     printf '%s' "$SCREENCAST_APP_DIR"
     return 0
   fi
-  if [[ -n "${EVIDENCE_APP_DIR:-}" ]]; then
-    printf '%s' "$EVIDENCE_APP_DIR"
-    return 0
-  fi
-  if [[ -d "$root/../mcw-app/app" ]]; then
-    cd "$root/../mcw-app/app" && pwd
-    return 0
-  fi
   if [[ -d "$root/../app" ]]; then
     cd "$root/../app" && pwd
     return 0
@@ -52,5 +44,4 @@ use_node_from_package() {
 export_screencast_env() {
   local root="$1"
   export SCREENCAST_DIR="$root"
-  export EVIDENCE_DIR="$root"
 }
