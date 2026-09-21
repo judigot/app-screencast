@@ -1,10 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
 import { evidenceVideoSize } from "./helpers/evidence-video-settings";
-
-import { screencastDir } from "./playwright.paths";
+import { screencastDir, screencastResultsDir } from "./playwright.paths";
 
 const evidenceDir = screencastDir();
+const resultsDir = screencastResultsDir();
 const { width, height } = evidenceVideoSize();
 
 export default defineConfig({
@@ -16,7 +16,7 @@ export default defineConfig({
   timeout: 120_000,
   expect: { timeout: 30_000 },
   reporter: [["list"]],
-  outputDir: `${evidenceDir}/test-results`,
+  outputDir: resultsDir,
   use: {
     ...devices["Desktop Chrome"],
     locale: "en-US",

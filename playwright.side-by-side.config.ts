@@ -1,8 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
-import { screencastDir } from "./playwright.paths";
+import { screencastDir, screencastResultsDir } from "./playwright.paths";
 
 const evidenceDir = screencastDir();
+const resultsDir = screencastResultsDir();
 
 export default defineConfig({
   testDir: evidenceDir,
@@ -13,7 +14,7 @@ export default defineConfig({
   timeout: 180_000,
   expect: { timeout: 30_000 },
   reporter: [["list"]],
-  outputDir: `${evidenceDir}/test-results`,
+  outputDir: resultsDir,
   use: {
     ...devices["Desktop Chrome"],
     locale: "en-US",

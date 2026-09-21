@@ -1,9 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
-import { screencastAppDir, screencastDir } from "./playwright.paths";
+import { screencastAppDir, screencastDir, screencastResultsDir } from "./playwright.paths";
 
 const appDir = screencastAppDir();
 const evidenceDir = screencastDir();
+const resultsDir = screencastResultsDir();
 const port = process.env.PORT ?? "3001";
 const baseURL = process.env.NEXT_PUBLIC_APP_URL ?? `http://127.0.0.1:${port}`;
 
@@ -14,7 +15,7 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   reporter: [["list"]],
-  outputDir: `${evidenceDir}/test-results`,
+  outputDir: resultsDir,
   use: {
     ...devices["Pixel 5"],
     baseURL,

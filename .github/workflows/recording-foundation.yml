@@ -1,0 +1,33 @@
+name: Recording Foundation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  foundation:
+    name: Run isolation and shell safety
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install media tooling
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y ffmpeg
+
+      - name: Validate recording foundation
+        shell: bash
+        run: bash scripts/test-recording-foundation.sh
