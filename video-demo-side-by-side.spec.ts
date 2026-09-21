@@ -28,8 +28,9 @@ async function exerciseExample(page: Page) {
   await installEvidenceOverlays(page, LABEL_LEFT);
   await expect(page.getByRole("heading", { name: "Example Domain" })).toBeVisible();
 
-  const moreInformation = page.getByRole("link", { name: /More information/i });
-  await clickEvidence(page, moreInformation);
+  const learnMore = page.locator("a[href]").first();
+  await expect(learnMore).toBeVisible({ timeout: 10_000 });
+  await clickEvidence(page, learnMore);
   await page.waitForURL(/iana\.org/, { timeout: 20_000 });
   await expect(page.locator("body")).toContainText(/Example Domains/i);
 
@@ -81,7 +82,7 @@ async function exerciseWikipedia(page: Page) {
 }
 
 test("public sites side by side", async ({ browser }, testInfo) => {
-  test.setTimeout(180_000);
+  test.setTimeout(90_000);
   const durationMs = evidenceRecordDurationMs();
   const quality = evidenceScreencastQuality();
   const panelSize = { width: PANEL.width, height: PANEL.height };
