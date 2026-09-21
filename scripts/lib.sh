@@ -70,11 +70,29 @@ reserve_screencast_output_path() {
   export SCREENCAST_OUTPUT_LOCK_DIR="$lock_dir"
 }
 
+release_screencast_output_reservation() {
+  if [[ -n "${SCREENCAST_OUTPUT_LOCK_DIR:-}" && -d "$SCREENCAST_OUTPUT_LOCK_DIR" ]]; then
+    rmdir -- "$SCREENCAST_OUTPUT_LOCK_DIR" 2>/dev/null || true
+  fi
+  unset SCREENCAST_OUTPUT_LOCK_DIR
+}
+
+rollback_screencast_initialization() {
+  local path
+  for path in "$@"; do
+    if [[ -n "$path" && -d "$path" ]]; then
+      rm -rf -- "$path"
+    fi
+  done
+  release_screencast_output_reservation
+}
+
 initialize_screencast_run() {
   local root="$1"
   local name="${2:-recording}"
   local generated_batch inherited_run_id batch_id safe_batch safe_name prefix
   local run_parent results_parent work_parent output_parent
+  local run_dir="" results_dir="" work_dir="" output_dir="" work_owner_marker=""
 
   if [[ "${SCREENCAST_INITIALIZED_PID:-}" = "$$" ]]; then
     echo "Screencast run already initialized in this process." >&2
@@ -95,46 +113,83 @@ initialize_screencast_run() {
 
   reserve_screencast_output_path || return 1
 
-  mkdir -p "$run_parent"
-  export SCREENCAST_RUN_DIR
-  SCREENCAST_RUN_DIR="$(mktemp -d "$run_parent/${prefix}.XXXXXX")"
-  export SCREENCAST_RUN_ID="$(basename "$SCREENCAST_RUN_DIR")"
-  export SCREENCAST_BATCH_ID="$batch_id"
+  if ! mkdir -p "$run_parent"; then
+    release_screencast_output_reservation
+    return 1
+  fi
+  if ! run_dir="$(mktemp -d "$run_parent/${prefix}.XXXXXX")"; then
+    release_screencast_output_reservation
+    return 1
+  fi
 
   if [[ -n "$results_parent" ]]; then
-    mkdir -p "$results_parent"
-    export SCREENCAST_RESULTS_DIR
-    SCREENCAST_RESULTS_DIR="$(mktemp -d "$results_parent/${prefix}.results.XXXXXX")"
+    if ! mkdir -p "$results_parent"; then
+      rollback_screencast_initialization "$run_dir"
+      return 1
+    fi
+    if ! results_dir="$(mktemp -d "$results_parent/${prefix}.results.XXXXXX")"; then
+      rollback_screencast_initialization "$run_dir"
+      return 1
+    fi
   else
-    export SCREENCAST_RESULTS_DIR="$SCREENCAST_RUN_DIR/test-results"
-    mkdir -p "$SCREENCAST_RESULTS_DIR"
+    results_dir="$run_dir/test-results"
+    if ! mkdir -p "$results_dir"; then
+      rollback_screencast_initialization "$run_dir"
+      return 1
+    fi
   fi
 
   if [[ -n "$work_parent" ]]; then
-    mkdir -p "$work_parent"
-    export SCREENCAST_WORK_DIR
-    SCREENCAST_WORK_DIR="$(mktemp -d "$work_parent/${prefix}.work.XXXXXX")"
+    if ! mkdir -p "$work_parent"; then
+      rollback_screencast_initialization "$results_dir" "$run_dir"
+      return 1
+    fi
+    if ! work_dir="$(mktemp -d "$work_parent/${prefix}.work.XXXXXX")"; then
+      rollback_screencast_initialization "$results_dir" "$run_dir"
+      return 1
+    fi
   else
-    export SCREENCAST_WORK_DIR="$SCREENCAST_RUN_DIR/work"
-    mkdir -p "$SCREENCAST_WORK_DIR"
+    work_dir="$run_dir/work"
+    if ! mkdir -p "$work_dir"; then
+      rollback_screencast_initialization "$results_dir" "$run_dir"
+      return 1
+    fi
   fi
 
   if [[ -n "$output_parent" ]]; then
-    mkdir -p "$output_parent"
-    export SCREENCAST_OUTPUT_DIR
-    SCREENCAST_OUTPUT_DIR="$(mktemp -d "$output_parent/${prefix}.artifacts.XXXXXX")"
+    if ! mkdir -p "$output_parent"; then
+      rollback_screencast_initialization "$work_dir" "$results_dir" "$run_dir"
+      return 1
+    fi
+    if ! output_dir="$(mktemp -d "$output_parent/${prefix}.artifacts.XXXXXX")"; then
+      rollback_screencast_initialization "$work_dir" "$results_dir" "$run_dir"
+      return 1
+    fi
   else
-    export SCREENCAST_OUTPUT_DIR="$SCREENCAST_RUN_DIR/artifacts"
-    mkdir -p "$SCREENCAST_OUTPUT_DIR"
+    output_dir="$run_dir/artifacts"
+    if ! mkdir -p "$output_dir"; then
+      rollback_screencast_initialization "$work_dir" "$results_dir" "$run_dir"
+      return 1
+    fi
   fi
 
-  export SCREENCAST_WORK_OWNER_MARKER="$SCREENCAST_WORK_DIR/.app-screencast-owned"
-  : > "$SCREENCAST_WORK_OWNER_MARKER"
-  export SCREENCAST_DEFAULT_OUTPUT="$SCREENCAST_OUTPUT_DIR/$safe_name.mp4"
+  work_owner_marker="$work_dir/.app-screencast-owned"
+  if ! : > "$work_owner_marker"; then
+    rollback_screencast_initialization "$output_dir" "$work_dir" "$results_dir" "$run_dir"
+    return 1
+  fi
+
+  export SCREENCAST_RUN_DIR="$run_dir"
+  export SCREENCAST_RUN_ID="${run_dir##*/}"
+  export SCREENCAST_BATCH_ID="$batch_id"
+  export SCREENCAST_RESULTS_DIR="$results_dir"
+  export SCREENCAST_WORK_DIR="$work_dir"
+  export SCREENCAST_OUTPUT_DIR="$output_dir"
+  export SCREENCAST_WORK_OWNER_MARKER="$work_owner_marker"
+  export SCREENCAST_DEFAULT_OUTPUT="$output_dir/$safe_name.mp4"
   export SCREENCAST_DIR="$root"
   export SCREENCAST_INITIALIZED_PID="$$"
 }
-
 cleanup_screencast_work() {
   if [[ -n "${SCREENCAST_WORK_DIR:-}" && -n "${SCREENCAST_WORK_OWNER_MARKER:-}" && \
         "$SCREENCAST_WORK_OWNER_MARKER" = "$SCREENCAST_WORK_DIR/.app-screencast-owned" && \
@@ -142,9 +197,7 @@ cleanup_screencast_work() {
     rm -rf -- "$SCREENCAST_WORK_DIR"
   fi
 
-  if [[ -n "${SCREENCAST_OUTPUT_LOCK_DIR:-}" && -d "$SCREENCAST_OUTPUT_LOCK_DIR" ]]; then
-    rmdir -- "$SCREENCAST_OUTPUT_LOCK_DIR" 2>/dev/null || true
-  fi
+  release_screencast_output_reservation
 }
 
 transcode_screencast_video() {

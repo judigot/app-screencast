@@ -119,6 +119,32 @@ if (
 fi
 wait "$lock_pid"
 
+recovery_output="$tmp/recovery/output.mp4"
+bad_run_parent="$tmp/not-a-directory"
+printf 'not a directory\n' > "$bad_run_parent"
+
+export EVIDENCE_OUTPUT_PATH="$recovery_output"
+export SCREENCAST_RUN_ID="recovery-batch"
+export SCREENCAST_RUN_DIR="$bad_run_parent"
+unset SCREENCAST_RUN_ROOT SCREENCAST_RESULTS_DIR SCREENCAST_WORK_DIR SCREENCAST_OUTPUT_DIR
+unset SCREENCAST_BATCH_ID SCREENCAST_INITIALIZED_PID SCREENCAST_WORK_OWNER_MARKER SCREENCAST_OUTPUT_LOCK_DIR
+
+if initialize_screencast_run "$ROOT" "recovery"; then
+  echo "initialization unexpectedly succeeded with an invalid run parent" >&2
+  exit 1
+fi
+
+[[ ! -e "${recovery_output}.app-screencast.lock" ]]
+[[ "${SCREENCAST_RUN_ID}" = "recovery-batch" ]]
+[[ "${SCREENCAST_RUN_DIR}" = "$bad_run_parent" ]]
+
+export SCREENCAST_RUN_DIR="$tmp/recovery-runs"
+initialize_screencast_run "$ROOT" "recovery"
+[[ -d "$SCREENCAST_RUN_DIR" ]]
+[[ -d "${recovery_output}.app-screencast.lock" ]]
+cleanup_screencast_work
+[[ ! -e "${recovery_output}.app-screencast.lock" ]]
+
 source_video="$tmp/long-source.webm"
 exported_video="$tmp/long-export.mp4"
 ffmpeg -hide_banner -loglevel error -y \
