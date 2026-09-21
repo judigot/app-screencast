@@ -22,6 +22,12 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install media tooling
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y ffmpeg
+
       - name: Validate recording foundation
         shell: bash
         run: bash scripts/test-recording-foundation.sh
