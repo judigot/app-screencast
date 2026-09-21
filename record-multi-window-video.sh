@@ -21,20 +21,20 @@ log "Record retained-context demo (IANA <-> Wikipedia, 3 switches, fake arrow + 
 
 "$ROOT/node_modules/.bin/playwright" test -c "$ROOT/playwright.multi-window.config.ts" --project=chromium
 
-mapfile -t PARTS < <(
-  find "$SCREENCAST_RESULTS_DIR" -type f \(
-    -name '01-example.webm' -o
-    -name '02-wikipedia.webm' -o
-    -name '03-example-retained.webm' -o
-    -name '04-wikipedia-retained.webm'
-  \) | sort
-)
-
-if [[ "${#PARTS[@]}" -ne 4 ]]; then
-  echo "ERROR: expected 4 segment webms in $SCREENCAST_RESULTS_DIR, got ${#PARTS[@]}:" >&2
-  printf '  %s\n' "${PARTS[@]}" >&2
-  exit 1
-fi
+PARTS=()
+for name in \
+  01-example.webm \
+  02-wikipedia.webm \
+  03-example-retained.webm \
+  04-wikipedia-retained.webm
+do
+  part="$(find "$SCREENCAST_RESULTS_DIR" -type f -name "$name" -print -quit)"
+  if [[ -z "$part" ]]; then
+    echo "ERROR: missing segment $name in $SCREENCAST_RESULTS_DIR" >&2
+    exit 1
+  fi
+  PARTS+=("$part")
+done
 
 log "Concat ${#PARTS[@]} segments -> MP4"
 N="${#PARTS[@]}"
