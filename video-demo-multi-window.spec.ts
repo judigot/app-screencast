@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 import {
+  clickEvidence,
   installEvidenceCursor,
   installEvidenceCursorOnContext,
   resetEvidenceZoom,
@@ -21,7 +22,9 @@ async function loadExample(page: Page) {
   await installEvidenceOverlays(page, LABEL_LEFT);
   await expect(page.getByRole("heading", { name: "Example Domain" })).toBeVisible();
 
-  await page.getByRole("link", { name: /More information/i }).click();
+  const learnMore = page.locator("a[href]").first();
+  await expect(learnMore).toBeVisible({ timeout: 10_000 });
+  await clickEvidence(page, learnMore);
   await page.waitForURL(/iana\.org/, { timeout: 20_000 });
   await expect(page.locator("body")).toContainText(/Example Domains/i);
 }
@@ -83,7 +86,7 @@ async function revisitWikipedia(page: Page) {
 }
 
 test("public sites multi-window switching", async ({ browser }, testInfo) => {
-  test.setTimeout(240_000);
+  test.setTimeout(120_000);
 
   const leftContext = await browser.newContext();
   const rightContext = await browser.newContext();
