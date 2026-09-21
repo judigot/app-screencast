@@ -6,10 +6,21 @@ Built for PR evidence and product demos; host app stays in its own repo.
 
 ## Direction
 
-- [Video invariants](docs/video-invariants.md) — separates behavior already implemented from required future behavior.
-- [North-star showcase](docs/north-star-showcase.md) — reference scenario used to evaluate interaction quality, multi-user presentation, narration/audio, technical evidence, and export quality.
+- [Video invariants and capability inventory](docs/video-invariants.md) — distinguishes implemented, verified, and planned behavior and defines the concurrency north-star metric.
+- [North-star showcase](docs/north-star-showcase.md) — deterministic multi-user booking scenario used to evaluate evidence and presentation quality.
+- [Evidence bundle contract](docs/evidence-bundle.md) — planned manifest and attribution boundary consumed by PR-readiness automation.
 
-Future capabilities documented there are targets, not claims about current support.
+Capabilities documented as Planned are targets, not claims about current support.
+
+## Current limitations
+
+- Canonical concurrent-run isolation is not implemented yet; current wrappers share `test-results` and fixed output names.
+- Some exports use a fixed ten-second duration.
+- 60 FPS export is delivery resampling and does not prove 60 FPS capture.
+- Current wrappers strip audio with `-an`.
+- The host-app example still imports sibling-app fixtures directly and does not yet use a formal host adapter.
+- Shell setup currently assumes NVM exists.
+- There is not yet a canonical GitHub Actions/cloud evidence workflow or evidence manifest.
 
 ## Requirements
 
@@ -26,33 +37,30 @@ pnpm record:pointer
 # → ~/test-pointer.mp4
 ```
 
-## Recording against your app
+## Recording against a host app
 
-Set **`SCREENCAST_APP_DIR`** to the app root (where `pnpm dev` and Playwright e2e setup live):
+Host-app recording is still being generalized. Set `SCREENCAST_APP_DIR` for configs that use it, but note that the current example scenario still contains host-specific sibling imports and is not yet the stable adapter contract.
 
-```bash
-export SCREENCAST_APP_DIR=/path/to/your-app
-bash record-test-video.sh   # example: login flow demo → ~/test-video.mp4
-```
+Do not use the previously documented `record-test-video.sh`; that script does not exist in the repository.
 
 ## Layout
 
 | Path | Role |
 |------|------|
 | `helpers/` | Fake cursor, screencast/zoom, video settings, window labels |
-| `docs/` | Video invariants and north-star showcase direction |
-| `video-demo-*.spec.ts` | Playwright specs (pointer demos + optional app flows) |
+| `docs/` | Capability inventory, invariants, evidence contract, and north-star showcase |
+| `video-demo-*.spec.ts` | Playwright specs |
 | `playwright.*.config.ts` | Per-demo Playwright configs |
-| `record-*.sh` | Record → webm → ffmpeg → `~/…mp4` |
+| `record-*.sh` | Current record/export wrappers |
 
 ## Environment (common)
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `SCREENCAST_DIR` | package root | Specs & test-results |
-| `SCREENCAST_APP_DIR` | — | Host app for `webServer` demos |
-| `EVIDENCE_VIDEO_WIDTH` / `HEIGHT` | 1920×1080 | Screencast size |
-| `EVIDENCE_RECORD_MS` | 10000 | Minimum record duration |
+| `SCREENCAST_APP_DIR` | — | Host app for configs that support it |
+| `EVIDENCE_VIDEO_WIDTH` / `HEIGHT` | 1920x1080 | Screencast size |
+| `EVIDENCE_RECORD_MS` | 10000 | Recording-duration input used by supported demos |
 | `EVIDENCE_CURSOR_SIZE` | 56 | Fake pointer size (px) |
 | `EVIDENCE_NATIVE_CURSOR` | 0 | Set `1` to skip fake pointer |
 
