@@ -35,7 +35,8 @@ A capability may be implemented without being verified.
 | Host adapter | Planned | `SCREENCAST_APP_DIR` exists, but `video-demo.spec.ts` still imports host fixtures/helpers directly from `../app`. |
 | Portable clean-runner startup | Verified | `scripts/test-recording-foundation.sh` forces an unavailable NVM path and verifies startup with Node already on `PATH`; Recording Foundation CI passes on merged main. |
 | Concurrent run isolation | Verified | Foundation CI launches concurrent invocations with the same inherited batch identity and shared parent directories, then proves distinct run/results/work/artifact paths. |
-| Full captured-duration export | Verified | Recording wrappers no longer use fixed `-t 10`; foundation CI exports a 12-second synthetic source, verifies duration with `ffprobe`, and verifies the recognizable final white frames survive past ten seconds. |\n| Authoritative timeline-derived duration | Planned | Full captured media is preserved, but a shared scene/narration/actor timeline is not implemented yet. |
+| Full captured-duration export | Verified | Recording wrappers no longer use fixed `-t 10`; foundation CI exports a 12-second synthetic source, verifies duration with `ffprobe`, and verifies the recognizable final white frames survive past ten seconds. |
+| Authoritative timeline-derived duration | Planned | Full captured media is preserved, but a shared scene/narration/actor timeline is not implemented yet. |
 | Per-actor persistent pointer position | Planned | Current pointer movement starts from viewport center and cursor remounting can lose conceptual position. |
 | Evidence manifest tied to exact source SHA | Planned | No canonical manifest format exists yet. |
 | GitHub Actions / cloud canonical recording | Planned | Documented target; no canonical retained cloud recording workflow yet proves it. |
