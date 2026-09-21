@@ -22,6 +22,29 @@ command -v node >/dev/null
 command -v ffmpeg >/dev/null
 command -v ffprobe >/dev/null
 
+fallback_node="$(command -v node)"
+fallback_path="$PATH"
+mkdir -p "$tmp/fake-nvm"
+cat > "$tmp/fake-nvm/nvm.sh" <<'EOF'
+nvm() {
+  if [[ "${1:-}" = "use" ]]; then
+    return 3
+  fi
+  return 0
+}
+EOF
+
+(
+  export NVM_DIR="$tmp/fake-nvm"
+  export PATH="$fallback_path"
+  unset -f nvm 2>/dev/null || true
+  # shellcheck source=scripts/lib.sh
+  source "$ROOT/scripts/lib.sh"
+  use_node_from_package "$ROOT"
+  [[ "$(command -v node)" = "$fallback_node" ]]
+  node --version >/dev/null
+)
+
 run_parent="$tmp/run-parent"
 results_parent="$tmp/results-parent"
 work_parent="$tmp/work-parent"
