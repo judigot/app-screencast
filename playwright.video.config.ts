@@ -1,9 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
 
-import { screencastAppDir, screencastDir } from "./playwright.paths";
+import { screencastAppDir, screencastDir, screencastResultsDir } from "./playwright.paths";
 
 const appDir = screencastAppDir();
 const evidenceDir = screencastDir();
+const resultsDir = screencastResultsDir();
 const port = process.env.PORT ?? "3001";
 const baseURL = process.env.NEXT_PUBLIC_APP_URL ?? `http://127.0.0.1:${port}`;
 
@@ -17,7 +18,7 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   reporter: [["list"]],
   globalSetup: `${appDir}/e2e/setup/global.setup.ts`,
-  outputDir: `${evidenceDir}/test-results`,
+  outputDir: resultsDir,
   use: {
     ...devices["Desktop Chrome"],
     baseURL,
@@ -26,7 +27,6 @@ export default defineConfig({
     viewport: { width: 1280, height: 720 },
     headless: true,
     trace: "off",
-    // Screencast starts in the spec after /login is visible (avoids ~2s about:blank lead-in).
     video: "off",
   },
   projects: [{ name: "chromium", use: { browserName: "chromium" } }],
