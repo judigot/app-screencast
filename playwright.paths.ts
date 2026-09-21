@@ -8,6 +8,11 @@ export function screencastDir(): string {
   return process.env.SCREENCAST_DIR ?? packageRoot;
 }
 
+/** Per-run Playwright output directory (override with SCREENCAST_RESULTS_DIR). */
+export function screencastResultsDir(): string {
+  return process.env.SCREENCAST_RESULTS_DIR ?? path.join(screencastDir(), "test-results");
+}
+
 /** Host app root (dev server, e2e setup). Required for app-backed demo specs. */
 export function screencastAppDir(): string {
   const dir = process.env.SCREENCAST_APP_DIR;
