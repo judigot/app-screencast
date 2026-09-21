@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Two Playwright browser contexts (YouTube cats / dogs), 3 window switches.
+# Two public browser contexts, recorded as four retained-context segments.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -17,12 +17,17 @@ OUT="${EVIDENCE_OUTPUT_PATH:-$SCREENCAST_DEFAULT_OUTPUT}"
 WORK="$SCREENCAST_WORK_DIR"
 mkdir -p "$(dirname "$OUT")"
 
-log "Record multi-context demo (YouTube cats <-> dogs, 3 switches, fake arrow + labels, run=$SCREENCAST_RUN_ID)"
+log "Record retained-context demo (IANA <-> Wikipedia, 3 switches, fake arrow + labels, run=$SCREENCAST_RUN_ID)"
 
-pnpm exec playwright test -c "$ROOT/playwright.multi-window.config.ts" --project=chromium
+"$ROOT/node_modules/.bin/playwright" test -c "$ROOT/playwright.multi-window.config.ts" --project=chromium
 
 mapfile -t PARTS < <(
-  find "$SCREENCAST_RESULTS_DIR" -type f \(     -name '01-youtube-cats.webm' -o     -name '02-youtube-dogs.webm' -o     -name '03-youtube-cats-retained.webm' -o     -name '04-youtube-dogs-retained.webm'   \) | sort
+  find "$SCREENCAST_RESULTS_DIR" -type f \(
+    -name '01-example.webm' -o
+    -name '02-wikipedia.webm' -o
+    -name '03-example-retained.webm' -o
+    -name '04-wikipedia-retained.webm'
+  \) | sort
 )
 
 if [[ "${#PARTS[@]}" -ne 4 ]]; then
@@ -41,7 +46,9 @@ for i in "${!PARTS[@]}"; do
 done
 FILTER+="concat=n=${N}:v=1:a=0[v]"
 
-ffmpeg -y "${INPUTS[@]}" -filter_complex "$FILTER" -map "[v]"   -c:v libx264 -pix_fmt yuv420p -movflags +faststart -an "$WORK/merged.mp4"
+ffmpeg -hide_banner -loglevel error -y "${INPUTS[@]}" \
+  -filter_complex "$FILTER" -map "[v]" \
+  -c:v libx264 -pix_fmt yuv420p -movflags +faststart -an "$WORK/merged.mp4"
 mv "$WORK/merged.mp4" "$OUT"
 
 log "Done: $OUT (run=$SCREENCAST_RUN_ID)"

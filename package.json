@@ -11,7 +11,8 @@
   "scripts": {
     "test:install": "playwright install --with-deps chromium",
     "record:pointer": "bash record-test-pointer.sh",
-    "record:pointer-variants": "bash record-pointer-variants.sh"
+    "record:pointer-variants": "bash record-pointer-variants.sh",
+    "record:showcase": "bash record-public-sites-showcase.sh"
   },
   "devDependencies": {
     "@playwright/test": "1.61.1",
