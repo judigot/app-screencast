@@ -40,9 +40,28 @@ async function exerciseExample(page: Page) {
   await page.waitForTimeout(400);
 }
 
+async function suppressWikipediaOverlays(page: Page) {
+  await page.addStyleTag({
+    content: `
+      [id^="portalBanner_"],
+      .banner-overlay,
+      .overlay-banner-main {
+        display: none !important;
+        pointer-events: none !important;
+      }
+    `,
+  });
+  await page.evaluate(() => {
+    document
+      .querySelectorAll('[id^="portalBanner_"], .banner-overlay, .overlay-banner-main')
+      .forEach((element) => element.remove());
+  });
+}
+
 async function exerciseWikipedia(page: Page) {
   await page.goto("https://www.wikipedia.org/", { waitUntil: "domcontentloaded" });
   await installEvidenceOverlays(page, LABEL_RIGHT);
+  await suppressWikipediaOverlays(page);
 
   const search = page.locator("#searchInput");
   await expect(search).toBeVisible({ timeout: 15_000 });
