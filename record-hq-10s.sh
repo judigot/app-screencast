@@ -37,7 +37,7 @@ fi
 
 log "Encode full captured duration -> ${EVIDENCE_OUTPUT_FPS}fps H.264 (crf=${EVIDENCE_OUTPUT_CRF}, preset=${EVIDENCE_OUTPUT_PRESET})"
 # Output FPS is delivery resampling; it does not establish the screencast capture FPS.
-ffmpeg -y -i "$WEBM"   -vf "fps=${EVIDENCE_OUTPUT_FPS}"   -c:v libx264 -preset "${EVIDENCE_OUTPUT_PRESET}" -crf "${EVIDENCE_OUTPUT_CRF}"   -pix_fmt yuv420p -movflags +faststart -an "$WORK/out.mp4"
+transcode_screencast_video "$WEBM" "$WORK/out.mp4" "$EVIDENCE_OUTPUT_FPS" "$EVIDENCE_OUTPUT_PRESET" "$EVIDENCE_OUTPUT_CRF"
 mv "$WORK/out.mp4" "$OUT"
 
 log "Done: $OUT (run=$SCREENCAST_RUN_ID)"

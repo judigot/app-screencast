@@ -27,7 +27,7 @@ pnpm exec playwright test -c "$ROOT/playwright.pointer.config.ts" --project=chro
 WEBM="$(find "$SCREENCAST_RESULTS_DIR" -name 'pointer-demo.webm' | head -1)"
 [[ -n "$WEBM" ]] || { echo "missing pointer-demo.webm in $SCREENCAST_RESULTS_DIR" >&2; exit 1; }
 
-ffmpeg -y -i "$WEBM" -vf "fps=${EVIDENCE_OUTPUT_FPS}"   -c:v libx264 -preset slow -crf 8 -pix_fmt yuv420p -movflags +faststart -an "$WORK/out.mp4"
+transcode_screencast_video "$WEBM" "$WORK/out.mp4" "$EVIDENCE_OUTPUT_FPS" slow 8
 mv "$WORK/out.mp4" "$OUT"
 
 printf '\nDone: %s (run=%s, cursor=%spx)\n' "$OUT" "$SCREENCAST_RUN_ID" "$EVIDENCE_CURSOR_SIZE"

@@ -27,7 +27,7 @@ pnpm exec playwright test -c "$ROOT/playwright.pointer-variants.config.ts" --pro
 WEBM="$(find "$SCREENCAST_RESULTS_DIR" -name 'pointer-variants.webm' | head -1)"
 [[ -n "$WEBM" ]] || { echo "missing pointer-variants.webm in $SCREENCAST_RESULTS_DIR" >&2; exit 1; }
 
-ffmpeg -y -i "$WEBM" -vf "fps=${EVIDENCE_OUTPUT_FPS}"   -c:v libx264 -preset slow -crf 8 -pix_fmt yuv420p -movflags +faststart -an "$WORK/out.mp4"
+transcode_screencast_video "$WEBM" "$WORK/out.mp4" "$EVIDENCE_OUTPUT_FPS" slow 8
 mv "$WORK/out.mp4" "$OUT"
 
 printf '\nDone: %s (run=%s, tail XS -> XL, #3 = wing v2)\n' "$OUT" "$SCREENCAST_RUN_ID"
