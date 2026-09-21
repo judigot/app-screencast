@@ -1,166 +1,188 @@
-# Video invariants
+# Video invariants and capability inventory
 
-These invariants define the expected behavior of videos produced by `app-screencast`.
+This document defines the required behavior of `app-screencast` and distinguishes code that exists from behavior that has actually been proven.
 
-They are split into two groups:
+## Status model
 
-- **Currently implemented** — behavior already supported by the repository.
-- **Future implementation** — required direction for upcoming work and the north-star showcase.
+- **Implemented** — code exists for the capability. This does not by itself prove reliability, portability, synchronization, or visual quality.
+- **Verified** — an automated check or retained artifact proves the requirement against a specific source SHA.
+- **Planned** — acceptance criteria exist, but support is incomplete.
 
-## Currently implemented
+A capability may be implemented without being verified.
 
-- App interaction should be human-like but fast.
-- Mouse movement should be smooth instead of jumping instantly between elements.
-- Typing should simulate human typing with a controlled per-character delay.
-- Clicks should include a short visual press state so interactions are easy to follow.
-- The pointer should remain visible during app interaction.
-- The pointer should use the custom macOS-style pointer instead of the browser's native cursor by default.
-- The pointer should remain correctly positioned while zooming.
-- Important interactions should automatically zoom toward the active UI area.
-- Zoom should reset after an interaction or recording segment.
-- The screencast should hide Playwright's own action indicators.
-- Recording should begin after the relevant page is ready instead of showing unnecessary blank browser startup time.
-- Individual workflow sections may be recorded as separate segments and concatenated into one final video.
-- The final video should be exported as H.264 MP4.
-- The final MP4 should use yuv420p for broad playback compatibility.
-- The final MP4 should use fast-start metadata for web playback.
-- Recording resolution and quality should be configurable.
-- High-quality recording should support configurable FPS, CRF, and FFmpeg preset.
-- If the demo requires multiple independent users or sessions, each user should use a separate browser context.
-- Multiple browser contexts should preserve their own application state while switching between them.
-- The active user or browser context should be identifiable with an on-screen label.
-- Browser-context labels should appear near the bottom of the screen.
-- Browser-context labels should automatically disappear after a short period.
-- Two browser contexts should be able to run and record simultaneously.
-- Two browser contexts should be able to be composed side by side into one video.
-- Side-by-side recordings should keep both browser panels synchronized for the intended demo duration.
-- The host application should remain in its own repository and `app-screencast` should operate as an external screencast toolkit.
-- The application directory should be configurable through `SCREENCAST_APP_DIR`.
-- Demo-specific Playwright configuration should remain separate from the host application's normal Playwright configuration.
-- Screencast behavior should be configurable through environment variables rather than requiring source changes.
-- Recording flows should be deterministic enough to run as automated Playwright scenarios.
-- The recording should fail when expected UI elements or application states are missing instead of silently producing misleading evidence.
+## Capability inventory
 
-## Future implementation
+| Capability | Status | Source / current limitation |
+| --- | --- | --- |
+| Custom macOS-style pointer | Implemented | `helpers/evidence-cursor.ts`; no retained regression artifact currently proves all movement invariants. |
+| Pointer press feedback | Implemented | `helpers/evidence-cursor.ts` scales the pointer while pressed. |
+| Timed bottom window labels | Implemented | `helpers/window-label.ts`; these are role/window labels, not a full narration timeline. |
+| Interaction zoom | Implemented | `helpers/evidence-zoom.ts`; synchronization with all cursor paths is not yet verified. |
+| Human-like stepped pointer motion | Implemented | `moveTo()` uses stepped linear movement. It starts from viewport center rather than the pointer's actual previous position. |
+| Human-like typing delay | Implemented | `typeEvidence()` uses sequential typing delay, but moves directly to the target rather than following the same natural pointer path. |
+| Separate browser contexts | Implemented | Multi-window and side-by-side specs create independent Playwright contexts. Session isolation is not yet part of a retained evidence contract. |
+| Side-by-side recording | Implemented | `video-demo-side-by-side.spec.ts` + `record-side-by-side.sh`; no measured synchronization invariant exists yet. |
+| Segment recording and concat | Implemented | `helpers/evidence-screencast.ts` and multi-window export flow. |
+| H.264 / yuv420p / fast-start export | Implemented | Recording scripts use ffmpeg `libx264`, `yuv420p`, and `+faststart`. |
+| Configurable export FPS | Implemented | ffmpeg resamples to the requested output FPS. This does **not** establish the capture frame rate. |
+| 60 FPS capture | Planned | Current HQ script explicitly upsamples the captured stream to 60 FPS for delivery. |
+| Audio in final output | Planned | Current recording scripts use `-an`, so audio is explicitly removed. |
+| Voice narration | Planned | No TTS or prerecorded narration pipeline exists yet. |
+| Shared narration/actor/technical-event timeline | Planned | Required for deterministic composition and synchronization. |
+| Native DevTools capture | Planned | No native DevTools capture implementation exists yet. |
+| Rendered console/network telemetry panel | Planned | Must remain distinct from native DevTools and be labeled accurately. |
+| Console/network event capture | Planned | Must use actual events associated with the correct actor and scenario. |
+| Host adapter | Planned | `SCREENCAST_APP_DIR` exists, but `video-demo.spec.ts` still imports host fixtures/helpers directly from `../app`. |
+| Portable clean-runner startup | Planned | `scripts/lib.sh` currently assumes NVM exists. |
+| Concurrent run isolation | Planned | Current scripts delete shared `test-results` and use fixed output names, so concurrent runs can interfere. |
+| Timeline-derived export duration | Planned | Side-by-side and HQ export currently use fixed `-t 10`. |
+| Per-actor persistent pointer position | Planned | Current pointer movement starts from viewport center and cursor remounting can lose conceptual position. |
+| Evidence manifest tied to exact source SHA | Planned | No canonical manifest format exists yet. |
+| GitHub Actions / cloud canonical recording | Planned | Documented target; no canonical retained cloud recording workflow yet proves it. |
+| North-star benchmark | Planned | Defined below and in `north-star-showcase.md`; not yet executed. |
+
+## Verified state today
+
+No north-star requirement should be called **Verified** merely because its implementation exists.
+
+A requirement becomes Verified only when the repository retains machine-verifiable evidence or a retained artifact tied to the exact source SHA that demonstrates the requirement.
+
+## Invariants
+
+### Run isolation and concurrency
+
+- Every recording run must have a unique run ID.
+- Every run must use an isolated working directory, Playwright output directory, temporary directory, final output path, and artifact name.
+- Cleanup must delete only files owned by the current run.
+- Concurrent jobs must never delete, overwrite, discover, or publish another run's files.
+- Fixed home-directory output names must not be used for canonical evidence.
+- A successful parallel benchmark must prove real overlap from job timestamps rather than merely dispatching jobs concurrently.
 
 ### Interaction and pacing
 
-- App interaction should remain human-like but faster than normal manual use.
-- Cursor paths should use natural easing rather than only linear interpolation.
-- Cursor movement should originate from its actual previous position.
-- Cursor movement speed should vary naturally with travel distance.
+- App interaction should be human-like but fast.
+- Cursor movement should originate from the actor's actual previous pointer position.
+- Cursor paths should use natural easing and distance-aware speed.
+- Clicking, typing, scrolling, navigation, cursor remounting, and zooming must preserve per-actor pointer continuity.
 - Typing speed should be configurable by content length and importance.
-- Long or unimportant text should be entered quickly while short meaningful values may be visibly typed.
-- Scrolling should be smooth, intentional, and stop with the target UI clearly visible.
-- The agent should avoid unnecessary hovering, scrolling, mouse movement, and idle time.
-- Important UI state changes should remain visible long enough for the viewer to understand the result.
-- Long loading periods should be shortened, cut, or accelerated when the wait itself is not relevant.
-- Meaningful loading, progress, optimistic updates, and real-time transitions should remain visible when they demonstrate product behavior.
+- Long or unimportant text may be accelerated while meaningful short values may be visibly typed.
+- Scrolling should be smooth, intentional, and stop with the relevant UI clearly visible.
+- Avoid unnecessary cursor movement, hovering, scrolling, and idle time.
+- Important states must remain visible long enough to understand.
+- Important final states must remain visible for at least two seconds.
+- Long waits may be shortened only when doing so does not change the apparent event order or product behavior.
 
-### Multi-user and layout
+### Multi-user and synchronization
 
-- If the demo requires multiple user types, such as admin and standard user, the agent should use split screen or two browser windows side by side when simultaneous visibility improves understanding.
-- Role-based demos should identify users explicitly, for example `Admin`, `Customer`, `Owner`, or `Staff`, instead of generic window names.
-- Role labels should remain visually consistent throughout the demo.
-- Each actor should have its own browser context, authentication state, and deterministic demo data.
-- For interactions between users, the triggering action and the resulting state change should be visible together whenever practical.
-- Real-time workflows should prefer simultaneous presentation over repeated context switching when side-by-side is clearer.
-- The agent should automatically choose between single-window, sequential multi-window, and side-by-side presentation based on the workflow.
+- Each user or role must use a separate browser context unless the scenario explicitly proves a single-session behavior.
+- Role labels must use meaningful names such as `Customer` and `Admin`, not generic window names.
+- Persistent role labels must remain separate from narration captions.
+- When one actor's action changes another actor's state, both actors should be visible before the cross-user action when practical.
+- No panel may be independently accelerated in a way that changes the apparent order of events.
+- Claims such as "immediately", "real time", or "without refreshing" may only be narrated when the recording demonstrates them.
+- Synchronization guarantees must be asserted from the application state or transport; simultaneous capture alone is not sufficient.
 
-### Narration and audio
+### Narration, captions, and audio
 
-- Videos should support sound.
-- Videos must support voice narration.
-- On-screen narration should appear near the bottom of the screen.
-- On-screen narration should be separate from browser-context or role labels.
-- Narration should explain intent and outcome rather than trivial pointer movement.
-- Narration should be synchronized with the action being shown.
-- Voice narration and on-screen narration should follow the same scene timeline.
-- Voice narration should support generated text-to-speech.
-- Voice narration should also support a prerecorded narration track.
-- Application audio and voice narration should be mixed into the final MP4 instead of being stripped during export.
-- Application audio, narration, and optional interaction sounds should have independently configurable volume levels.
-- Voice narration should remain clear over application audio through ducking or equivalent volume control.
-- Unexpected operating-system sounds, notifications, or unrelated audio should not appear in the final recording.
-
-### Scene orchestration
-
-- Demo scenarios should support reusable named actors.
-- Demo scenarios should support declarative steps describing actor, action, expected result, narration, and preferred layout.
-- Recording orchestration should automatically place narration, role labels, cursor behavior, zoom, and timing from the scenario definition.
-- The toolkit should support explicit scene boundaries.
-- Each scene should have a clear starting state, action, and observable result.
-- Scene transitions should preserve enough context that the viewer understands how the application reached the next state.
-- The final frame of an important scene should remain visible briefly before transitioning.
-- Failed recording attempts should never be included in the final output.
-- The toolkit should verify expected application state before and after each important recorded action.
+- PR evidence and showcase profiles both require sound when the scenario declares audio.
+- The canonical showcase must include intelligible voice narration; a silent audio stream does not pass.
+- Bottom narration captions must occupy a reserved safe area and must not cover relevant controls or evidence.
+- Narration captions must remain visually separate from persistent role labels.
+- Actor video, narration, captions, application audio, and technical events must share one authoritative timeline.
+- Voice narration may come from generated TTS or a prerecorded track.
+- Application audio and narration must be mixed rather than stripped.
+- Narration volume must remain intelligible over application audio, using ducking or equivalent mixing when necessary.
+- Unexpected operating-system sounds, notifications, or unrelated audio must not be published.
 
 ### Technical evidence
 
-- The screencast should be able to show browser DevTools when technical evidence materially strengthens the demonstration.
-- DevTools should only be shown when relevant to the task.
-- The agent should choose between product-only, console evidence, network evidence, or combined evidence based on the scenario.
-- DevTools should never be shown merely because they are available.
-- Product UX should remain the primary focus unless the purpose of the video is specifically technical verification.
-- The browser console should be available as an evidence panel.
-- Console evidence should be used to prove meaningful runtime behavior such as emitted events, state transitions, warnings, errors, or diagnostic output.
-- Console output should be filtered to messages relevant to the demonstrated feature.
-- Unexpected console errors should fail the evidence run unless explicitly expected by the scenario.
-- Expected errors should be clearly identified as intentional behavior.
-- Important console output should remain visible long enough to read.
-- The Network tab should be available as an evidence panel.
-- Network evidence should be used to prove meaningful HTTP, API, WebSocket, SSE, or other network behavior.
-- Network evidence should focus on requests relevant to the demonstrated action.
-- The agent should be able to filter requests by endpoint, method, resource type, or search term.
-- Important requests should show HTTP method, endpoint, status code, and timing when relevant.
-- Request and response payloads should be inspectable when they provide useful evidence.
-- Sensitive request headers, cookies, authorization values, tokens, and personal data must never be visible.
-- Sensitive request or response fields should be automatically redacted before appearing in the recording.
-- Unexpected 4xx or 5xx responses should fail the evidence run unless explicitly expected by the scenario.
-- WebSocket and real-time traffic should be inspectable when demonstrating real-time features.
-- A real-time demo should be able to prove that the receiving client changed because of an actual network event rather than editing.
-- Technical evidence should be synchronized with the visible user action that caused it.
-- The video should make the causal relationship clear: user action -> technical event -> visible result.
-- DevTools may be shown beside the application in split-screen mode.
-- The application should remain large enough to understand while DevTools is visible.
-- DevTools should be collapsed or removed once the relevant evidence has been shown.
-- Multi-user demonstrations should associate technical evidence with the correct browser context.
-- Customer and Admin sessions should not share console or network evidence accidentally.
-- Scene-level configuration should support no DevTools, console, network, request details, response details, real-time events, or combined technical evidence.
-- The agent should automatically select the least intrusive evidence mode that adequately proves the behavior.
-- PR evidence and debugging demonstrations should prefer stronger technical evidence when useful.
+- Technical evidence is conditional: show it only when it materially proves the requirement.
+- Native DevTools capture and a rendered telemetry panel are distinct evidence modes and must be labeled accurately.
+- Console and network evidence must come from actual captured events associated with the correct actor.
+- The evidence mode may include console, HTTP requests, request/response details, WebSocket frames, SSE events, or a combined view.
+- Unexpected console errors must fail the scenario unless explicitly expected.
+- Unexpected failed requests or unexpected 4xx/5xx responses must fail the scenario unless explicitly expected.
+- Request and response evidence must be filtered to the relevant action.
+- Sensitive headers, cookies, authorization values, tokens, secrets, and personal data must never be published.
+- Playwright traces may supplement video evidence for action, console, and network inspection, subject to the same redaction rules.
+- Technical evidence should follow the causal order: visible user action -> captured technical event -> visible result.
 
-### Privacy and trust
+### Host integration
 
-- Sensitive values such as passwords, API keys, tokens, personal information, and authentication secrets must never appear in the final recording.
-- The toolkit should support automatic masking or redaction of configured sensitive elements.
-- Browser chrome, developer tools, terminals, and unrelated applications should remain outside the recording unless intentionally required by the demo.
-- Notifications and unrelated UI should not appear in the recording.
-- Editing must not imply application behavior that did not actually occur.
+- `app-screencast` must remain independent of any particular host application's source tree.
+- Host integration must use an explicit adapter contract for startup, readiness, authentication, deterministic seed/reset, actors, scenarios, and cleanup.
+- `SCREENCAST_APP_DIR` may identify the host application, but toolkit-owned scenarios must not import hard-coded sibling paths such as `../app`.
+- Host adapters must fail clearly when required capabilities are unavailable.
+- The toolkit must be runnable on a clean cloud runner without an undeclared NVM prerequisite.
+
+### Recording duration and export validation
+
+- Export duration must come from the authoritative scene timeline or measured recording duration, not a fixed `-t 10`.
+- Export must not cut off the final assertion or its minimum two-second hold.
+- Capture FPS and export FPS are separate measurements.
+- A 60 FPS export created by resampling must not be described as 60 FPS capture.
+- Canonical output validation must check at least resolution, duration, video codec/container expectations, audio presence when required, and completion of the final scene.
+- Failed or partial exports must not become success evidence.
+
+### Privacy and redaction
+
+- Redaction applies before publication to video, screenshots, traces, request/response payloads, logs, and diagnostic artifacts.
+- Passwords, API keys, access tokens, session secrets, authentication headers, private cookies, and unintended personal information must never appear in published evidence.
+- Failed attempts may be retained as failure diagnostics under the configured retention policy, but they must never be labeled or published as success evidence.
+- Editing must not imply application behavior that did not occur.
 
 ### Recording execution environment
 
-- Canonical video recordings should be produced on a cloud machine or in a GitHub Actions environment rather than depending on a developer's local workstation.
-- GitHub Actions should be the preferred environment for deterministic CI-generated evidence when the workflow can run non-interactively.
-- A cloud machine should be used when the recording requires capabilities that are impractical in a standard GitHub Actions runner, such as a persistent graphical desktop, native browser DevTools windows, system audio capture, or longer interactive sessions.
-- Local recording may be used for development and debugging, but it should not be treated as the canonical evidence artifact.
-- The recording environment should be reproducible from version-controlled configuration.
-- Node.js, Playwright/Chromium, ffmpeg, fonts, display settings, locale, timezone, viewport, device scale, and other rendering-sensitive dependencies should be explicitly controlled.
-- Cloud and GitHub Actions recordings should avoid environment-specific UI, notifications, credentials, machine names, or other host details leaking into the video.
-- The same scenario should produce materially equivalent evidence regardless of which supported cloud runner executes it.
-- Generated video artifacts should be retained by the cloud job or GitHub Actions workflow so they can be reviewed and attached to PRs or other evidence records.
-- Recording failures in the cloud environment should fail the job rather than publishing incomplete or misleading evidence.
+- Canonical evidence must be generated in GitHub Actions or on a reproducible cloud machine.
+- GitHub Actions is preferred for deterministic non-interactive evidence generation.
+- A reproducible cloud machine is appropriate when the scenario requires persistent desktop UI, native DevTools windows, system audio capture, or other OS-level capabilities impractical on the standard runner.
+- Local recording is for development and debugging only and is not canonical evidence.
+- Version-controlled configuration must control rendering-sensitive dependencies, including Node.js, Playwright/Chromium, ffmpeg, fonts, display settings, locale, timezone, viewport, and device scale.
+- Generated evidence bundles must be retained by the cloud job or GitHub Actions workflow.
+- Recording failure must fail the job rather than publishing incomplete evidence.
 
-### Output quality and reproducibility
+### Presentation profiles
 
-- The recording viewport, browser zoom, and device scale should remain consistent throughout a scene.
-- Text and interactive elements should remain legible at the final exported resolution.
-- Desktop, tablet, and mobile demos should use deliberate viewport presets.
-- The toolkit should support portrait and landscape output when required by the target platform.
-- The toolkit should support reusable output presets for PR evidence, product demos, documentation, and social-media previews.
-- PR evidence videos should prioritize proof and reproducibility over cinematic presentation.
-- Product demo videos should prioritize clarity, pacing, narration, and visual polish.
-- Every generated video should be reproducible from an explicit scenario or script.
-- The toolkit should retain enough metadata to identify the scenario, app, viewport, actors, and recording configuration used to produce the video.
-- The final video should contain no unnecessary dead time at the beginning or end.
-- The final output should prioritize clarity and information density over decorative effects.
+**PR evidence**
+
+- Optimize for direct proof, readability, reproducibility, and technical attribution.
+- Use minimal editing.
+- Show technical evidence when it directly maps to an acceptance criterion.
+- Decorative browser video must not substitute for machine-verifiable evidence on nonvisual changes.
+
+**Showcase**
+
+- Use the same proven application behavior as PR evidence.
+- Add deliberate pacing, composition, captions, voice narration, and audio mixing.
+- Never weaken or replace assertions merely to improve presentation.
+
+### Human review
+
+Machine validation is necessary but not sufficient for presentation quality.
+
+A human visual review should check:
+
+- readability;
+- pacing;
+- narration accuracy;
+- caption placement;
+- role clarity;
+- technical-evidence legibility;
+- whether editing changes the apparent causal order.
+
+## North-star metric
+
+**Produce trustworthy PR evidence concurrently without manual recording.**
+
+Initial benchmark target:
+
+- Dispatch five independent recording jobs for five isolated scenarios or fixtures.
+- At some point in the benchmark, all five recording jobs are simultaneously in their recording/execution interval.
+- All five jobs complete successfully without touching another run's workspace or artifacts.
+- Each job produces one valid evidence bundle tied to its exact repository, PR number, source SHA, scenario version, run ID, and attempt number.
+- Each evidence bundle passes declared scenario assertions and media validation.
+- Each bundle maps every relevant acceptance criterion to a machine assertion and, where useful, a video timestamp.
+- Any source-head change invalidates evidence produced for the previous SHA.
+- The benchmark requires 5/5 valid bundles; partial success does not pass.
+
+This is a benchmark target, not an observed service-level promise.
