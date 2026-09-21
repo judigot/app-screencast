@@ -4,6 +4,13 @@ Playwright screencast toolkit for polished **web app demo videos**: in-browser c
 
 Built for PR evidence and product demos; host app stays in its own repo.
 
+## Direction
+
+- [Video invariants](docs/video-invariants.md) — separates behavior already implemented from required future behavior.
+- [North-star showcase](docs/north-star-showcase.md) — reference scenario used to evaluate interaction quality, multi-user presentation, narration/audio, technical evidence, and export quality.
+
+Future capabilities documented there are targets, not claims about current support.
+
 ## Requirements
 
 - Node.js 20+
@@ -33,6 +40,7 @@ bash record-test-video.sh   # example: login flow demo → ~/test-video.mp4
 | Path | Role |
 |------|------|
 | `helpers/` | Fake cursor, screencast/zoom, video settings, window labels |
+| `docs/` | Video invariants and north-star showcase direction |
 | `video-demo-*.spec.ts` | Playwright specs (pointer demos + optional app flows) |
 | `playwright.*.config.ts` | Per-demo Playwright configs |
 | `record-*.sh` | Record → webm → ffmpeg → `~/…mp4` |
