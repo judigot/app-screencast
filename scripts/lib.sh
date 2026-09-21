@@ -21,14 +21,28 @@ use_node_from_dir() {
   cd "$dir"
 
   local nvm_dir="${NVM_DIR:-$HOME/.nvm}"
+  local fallback_path="$PATH"
+  local fallback_node=""
+  fallback_node="$(command -v node 2>/dev/null || true)"
+
   if [[ -s "$nvm_dir/nvm.sh" ]]; then
     export NVM_DIR="$nvm_dir"
     # shellcheck disable=SC1090
     . "$NVM_DIR/nvm.sh" --no-use
-    if [[ -f .nvmrc ]]; then
-      nvm use >/dev/null
+    if [[ -f .nvmrc ]] && ! nvm use >/dev/null 2>&1; then
+      export PATH="$fallback_path"
+      if [[ -n "$fallback_node" && -x "$fallback_node" ]]; then
+        printf 'Warning: NVM could not activate %s; using Node already on PATH: %s\n' \
+          "$(tr -d '[:space:]' < .nvmrc)" \
+          "$("$fallback_node" --version)" >&2
+      else
+        echo "Node.js is required. Install the version declared by the package before recording." >&2
+        return 1
+      fi
     fi
-  elif ! command -v node >/dev/null 2>&1; then
+  fi
+
+  if ! command -v node >/dev/null 2>&1; then
     echo "Node.js is required. Install the version declared by the package before recording." >&2
     return 1
   fi

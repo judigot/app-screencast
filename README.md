@@ -40,6 +40,21 @@ pnpm record:pointer
 
 The wrapper prints the exact output path. By default, every invocation receives a unique run directory under `RUNNER_TEMP`, `TMPDIR`, or `/tmp`, with the final video under that run's `artifacts/` directory.
 
+## Public-site capability showcase
+
+After installing Chromium and ffmpeg, run:
+
+```bash
+pnpm record:showcase
+```
+
+This creates two validated MP4s under `showcase-artifacts/` by default:
+
+- `public-sites-side-by-side.mp4` — Example.com/IANA and Wikipedia recorded in parallel and composed side by side;
+- `public-sites-multi-window.mp4` — retained browser contexts switched across four segments.
+
+This is a recording-capability demo. It does not prove behavior in a target application. Generic orchestration and exact-SHA target attribution belong in `judigot/agent-workspace`.
+
 ## Recording against a host app
 
 Host-app recording is still being generalized. Set `SCREENCAST_APP_DIR` for configs that use it, but note that the current example scenario still contains host-specific sibling imports and is not yet the stable adapter contract.
