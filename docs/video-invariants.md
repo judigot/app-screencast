@@ -33,9 +33,9 @@ A capability may be implemented without being verified.
 | Rendered console/network telemetry panel | Planned | Must remain distinct from native DevTools and be labeled accurately. |
 | Console/network event capture | Planned | Must use actual events associated with the correct actor and scenario. |
 | Host adapter | Planned | `SCREENCAST_APP_DIR` exists, but `video-demo.spec.ts` still imports host fixtures/helpers directly from `../app`. |
-| Portable clean-runner startup | Planned | `scripts/lib.sh` currently assumes NVM exists. |
-| Concurrent run isolation | Planned | Current scripts delete shared `test-results` and use fixed output names, so concurrent runs can interfere. |
-| Timeline-derived export duration | Planned | Side-by-side and HQ export currently use fixed `-t 10`. |
+| Portable clean-runner startup | Verified | `scripts/test-recording-foundation.sh` forces an unavailable NVM path and verifies startup with Node already on `PATH`; Recording Foundation CI passes on merged main. |
+| Concurrent run isolation | Verified | Foundation CI launches concurrent invocations with the same inherited batch identity and shared parent directories, then proves distinct run/results/work/artifact paths. |
+| Full captured-duration export | Verified | Recording wrappers no longer use fixed `-t 10`; foundation CI exports a 12-second synthetic source, verifies duration with `ffprobe`, and verifies the recognizable final white frames survive past ten seconds. |\n| Authoritative timeline-derived duration | Planned | Full captured media is preserved, but a shared scene/narration/actor timeline is not implemented yet. |
 | Per-actor persistent pointer position | Planned | Current pointer movement starts from viewport center and cursor remounting can lose conceptual position. |
 | Evidence manifest tied to exact source SHA | Planned | No canonical manifest format exists yet. |
 | GitHub Actions / cloud canonical recording | Planned | Documented target; no canonical retained cloud recording workflow yet proves it. |
@@ -44,6 +44,16 @@ A capability may be implemented without being verified.
 ## Verified state today
 
 No north-star requirement should be called **Verified** merely because its implementation exists.
+
+The Recording Foundation workflow verifies these foundation behaviors on merged main:
+
+- concurrent invocations with the same inherited batch configuration receive distinct recording identities and distinct run/results/work/artifact directories;
+- cleaning one invocation removes only its ownership-marked work child and preserves another invocation plus unrelated files in the caller-supplied parent;
+- two concurrent invocations cannot claim the same explicit `EVIDENCE_OUTPUT_PATH`;
+- a synthetic export longer than ten seconds retains its ending, with duration checked by `ffprobe` and the recognizable final frame checked from media data;
+- Node already on `PATH` works when NVM is unavailable.
+
+These checks do **not** verify the full browser-recording showcase, sound/narration, host adapters, evidence manifests, or the five-job north-star benchmark. Those remain Implemented or Planned according to the capability table.
 
 A requirement becomes Verified only when the repository retains machine-verifiable evidence or a retained artifact tied to the exact source SHA that demonstrates the requirement.
 
@@ -84,8 +94,9 @@ A requirement becomes Verified only when the repository retains machine-verifiab
 
 ### Narration, captions, and audio
 
-- PR evidence and showcase profiles both require sound when the scenario declares audio.
-- The canonical showcase must include intelligible voice narration; a silent audio stream does not pass.
+- Canonical PR evidence and showcase videos must include meaningful audible sound.
+- The toolkit must support voice narration, and the canonical showcase must include intelligible voice narration.
+- Silent audio tracks do not satisfy the sound requirement.
 - Bottom narration captions must occupy a reserved safe area and must not cover relevant controls or evidence.
 - Narration captions must remain visually separate from persistent role labels.
 - Actor video, narration, captions, application audio, and technical events must share one authoritative timeline.
