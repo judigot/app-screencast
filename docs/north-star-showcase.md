@@ -1,209 +1,241 @@
 # North-star showcase
 
-The north-star showcase is the reference video used to evaluate new `app-screencast` capabilities.
+The north-star showcase is the reference scenario used to evaluate `app-screencast` presentation and evidence quality.
 
-## Goal
+It does not replace the concurrency north-star metric in `video-invariants.md`. The concurrency metric proves the system can produce trustworthy evidence at scale; this showcase proves the quality of each evidence bundle.
 
-Generate a polished 45-60 second product-demo video that feels intentionally produced while every visible application interaction is performed against the real running application.
+## Reference scenario
 
-The scenario should exercise as many invariants as possible in one coherent workflow.
+Use a deterministic booking fixture backed by a real resettable backend.
 
-## Scenario
+Actors:
 
-Demonstrate a booking workflow involving two independent users:
-
-- Customer
+- Customer A
+- Customer B
 - Admin
 
-The customer books an available appointment.
+All actors use separate browser contexts and deterministic fictional identities.
 
-The admin is already signed in in a separate browser context and sees the booking appear.
+The scenario must prove:
 
-The admin confirms the booking.
+1. Customer A sees an available slot.
+2. Customer A books the slot.
+3. The backend persists the booking.
+4. Admin sees the booking in a separate session.
+5. Admin confirms the booking.
+6. Customer A sees the confirmed state through the actual application synchronization mechanism.
+7. Reloading Customer A preserves the confirmed state.
+8. Customer B attempts to book the now-occupied slot.
+9. Customer B receives the expected rejection.
+10. The rejected action does not create a duplicate booking.
 
-The customer then sees the booking status update to confirmed.
+The host adapter owns deterministic setup, reset, authentication, seed data, and cleanup.
 
-The workflow should prove that two independent users can interact with the same application and observe each other's changes.
+## Profiles
+
+The same scenario must support two presentation profiles.
+
+### PR evidence
+
+- Direct proof.
+- Minimal editing.
+- Readable assertions and technical details.
+- Technical evidence appears when it strengthens an acceptance criterion.
+- Machine assertions remain authoritative.
+
+### Showcase
+
+- Uses the same proven workflow and assertions as PR evidence.
+- Deliberate pacing and composition.
+- Voice narration.
+- Bottom narration captions.
+- Application audio where meaningful.
+- Role-aware layout.
+- Technical evidence only when it helps the viewer understand why the state changed.
 
 ## Direction
 
-- Target duration: 45-60 seconds.
-- Output: 1920x1080 H.264 MP4.
-- Target frame rate: 60 FPS.
-- Produce the canonical recording on a cloud machine or in a GitHub Actions environment, not on a developer's local workstation.
-- Prefer GitHub Actions for deterministic CI evidence; use a cloud machine when the showcase requires persistent desktop, native DevTools, system audio, or other capabilities not practical on the standard runner.
+- Target showcase duration: approximately 60-90 seconds for the full positive and negative workflow.
+- Output target: 1920x1080 H.264 MP4.
+- Delivery FPS may target 60 FPS, but capture FPS must be measured separately and must not be inferred from export resampling.
+- Produce canonical recordings in GitHub Actions or on a reproducible cloud machine.
 - Start directly inside the product.
-- Include application audio where meaningful.
-- Include voice narration.
-- Include synchronized on-screen narration near the bottom of the video.
-- Do not show Playwright UI, test tooling, terminals, or implementation details unless technical evidence is intentionally part of the scene.
-- Do not add edits that make the product appear to perform behavior it did not actually perform.
-- The finished video should look intentionally produced rather than like raw browser automation.
+- Do not show Playwright tooling, terminals, or implementation details unless they are intentional technical evidence.
+- Do not edit the video in a way that implies behavior the application did not perform.
+- Final important states remain visible for at least two seconds.
 
-## Scene 1 - Establish the workflow
+## Timeline
 
-Show the Customer application viewing available appointment slots.
+All actor recordings, captions, narration, application audio, console/network events, screenshots, and assertions share one authoritative timeline.
 
-Narration:
+No panel may be independently accelerated in a way that changes apparent event order.
 
-> Booking an appointment takes only a few seconds.
+## Scene 1 - Establish availability
 
-The pointer should already be visible but should not move unnecessarily while the viewer establishes context.
-
-## Scene 2 - Customer creates a booking
-
-The pointer moves smoothly to an available appointment.
-
-Apply a subtle zoom toward the relevant UI.
-
-The Customer selects the appointment and submits the booking.
-
-Use natural but accelerated interaction timing.
+Show Customer A and the available booking slot.
 
 Narration:
 
-> The customer chooses an available time and submits the booking.
+> Customer A starts with a slot that is available to book.
 
-Hold the resulting state long enough to understand.
+Keep captions inside the reserved bottom safe area.
 
-## Scene 3 - Reveal the Admin
+## Scene 2 - Customer A books
 
-Transition to side-by-side mode.
+Customer A selects and submits the booking.
 
-- Customer on the left.
-- Admin on the right.
-- Clearly label both roles.
-- Preserve both sessions and application state.
+Assert booking creation against the real backend.
 
 Narration:
 
-> The admin receives the new booking immediately.
+> Customer A books the available slot.
 
-If the product supports real-time updates, show the actual real-time behavior rather than simulating it through editing.
+Hold the resulting state long enough to read.
 
-## Scene 4 - Admin confirms with technical evidence
+## Scene 3 - Show Admin before the cross-user action
 
-Keep both users visible when practical.
+Bring Admin into side-by-side view before the relevant cross-user state transition.
 
-The Admin opens or selects the new booking and confirms it.
+- Customer A is clearly labeled.
+- Admin is clearly labeled.
+- Both remain independent sessions.
+
+Assert that the Admin observes the created booking.
+
+Only describe this as "immediate", "real time", or "without refreshing" if the recorded behavior and assertions prove that claim.
+
+## Scene 4 - Admin confirms with conditional technical evidence
+
+Admin confirms the booking.
 
 Narration:
 
-> The admin reviews the request and confirms it.
+> The admin confirms the booking.
 
-When technical evidence materially strengthens the proof, temporarily reveal the least intrusive relevant DevTools evidence.
+When useful, show the least intrusive technical evidence that proves the action.
 
-Preferred evidence sequence:
+Example only:
 
 ```text
 Admin clicks Confirm
         |
         v
-Network evidence appears
+actual request/event captured for Admin
         |
         v
-PATCH /api/bookings/:id -> 200
+successful persistence
         |
         v
-real-time event reaches Customer
+actual synchronization event reaches Customer A
         |
         v
-Customer UI changes Pending -> Confirmed
+Customer A UI changes to Confirmed
 ```
 
-Use the real endpoint and transport of the host application. Do not hard-code the example endpoint if the app uses something else.
+Use the host application's actual method, endpoint, response, and transport. Never hard-code narration from assumptions.
 
-The technical evidence should be filtered to the specific action being demonstrated.
+Native DevTools and a rendered telemetry panel must be identified as different modes.
 
-Never expose authorization headers, cookies, access tokens, secrets, or personal data.
+## Scene 5 - Customer A receives and persists the result
 
-## Scene 5 - Customer receives the result
+Show Customer A's confirmed booking.
 
-Keep both panels visible.
+Assert the expected state.
 
-The Customer application receives the resulting state change through the product's actual synchronization mechanism.
+Reload Customer A.
+
+Assert that the confirmed state persists.
+
+Narration should describe only what the video demonstrates.
+
+## Scene 6 - Negative concurrency/business-rule proof
+
+Bring Customer B into view.
+
+Customer B attempts to book the occupied slot.
+
+Assert the expected rejection.
+
+Assert that no duplicate booking was created.
 
 Narration:
 
-> The customer sees the confirmation without leaving the page.
+> A second customer cannot take the slot after it has been booked.
 
-The visual relationship between the Admin action and Customer update should be obvious.
+If a relevant API rejection is useful evidence, show the sanitized request/response or telemetry associated with Customer B.
 
-## Scene 6 - Final state
+## Scene 7 - Final proof
 
-Either keep both roles side by side or focus on the Customer's confirmed booking, whichever produces the clearest ending.
+Show the final successful state:
 
-Narration:
+- Customer A: confirmed booking.
+- Admin: confirmed booking.
+- Customer B: expected rejection.
+- Backend assertion: exactly one booking for the slot.
 
-> One booking. Two users. One synchronized workflow.
+Hold the final state for at least two seconds.
 
-Hold the successful final state briefly.
+## Narration and audio requirements
 
-Do not navigate away from the result.
+- The canonical showcase includes intelligible voice narration.
+- A silent audio track does not satisfy this requirement.
+- Bottom captions communicate the same meaning as narration without covering relevant controls.
+- Persistent role labels remain separate from captions.
+- Application audio may be mixed where meaningful.
+- Narration and application audio share the authoritative timeline.
 
-## Technical-evidence rules
+## Evidence bundle
 
-Use technical evidence only when it proves something important.
+Every canonical run produces a bundle containing at least:
 
-Preferred philosophy:
+- repository;
+- PR number when applicable;
+- exact source SHA;
+- deployment ID or tested environment identifier when applicable;
+- scenario name and version;
+- toolkit version;
+- run ID and attempt number;
+- runner/job URL;
+- start/end timestamps;
+- video;
+- relevant screenshots;
+- assertion results;
+- sanitized technical evidence;
+- optional Playwright trace when permitted;
+- mapping from acceptance criteria to assertions and useful video timestamps;
+- artifact checksums;
+- retention policy metadata.
 
-```text
-Show the UX
-    ->
-Reveal the internal evidence
-    ->
-Show the resulting UX
-```
+A newer source SHA invalidates readiness based on an older bundle.
 
-The agent should choose the smallest useful evidence surface:
+## Media validation
 
-- no DevTools
-- console
-- network
-- request details
-- response details
-- WebSocket or real-time event
-- combined evidence
+The job must validate:
 
-Unexpected console errors, unexpected failed requests, or unexpected 4xx/5xx responses should fail the evidence run unless the scenario explicitly expects them.
+- expected resolution;
+- expected container/codec;
+- duration matches the authoritative timeline within declared tolerance;
+- final scene is complete and includes the minimum two-second hold;
+- an audio stream is present when required;
+- showcase narration is intelligible through human review;
+- no fixed export duration truncates the scenario.
+
+## Failure handling
+
+- Failed attempts remain available as failure diagnostics according to retention policy.
+- Failed attempts never become success evidence.
+- Unexpected console errors, unexpected failed requests, or unexpected 4xx/5xx responses fail the scenario unless explicitly expected.
+- Redaction applies before publication to video, screenshots, traces, payloads, and logs.
 
 ## Execution environment
 
-The north-star artifact should be generated by infrastructure that an agent can reproduce without relying on a developer's personal machine.
-
 Preferred order:
 
-1. GitHub Actions for deterministic, non-interactive evidence generation.
-2. A reproducible cloud machine when full desktop, DevTools, audio, or other OS-level capture is required.
+1. GitHub Actions for deterministic non-interactive recording.
+2. A reproducible cloud machine when full desktop, native DevTools, system audio, or other OS-level capture is required.
 
-The environment should pin or control rendering-sensitive dependencies such as Node.js, Playwright/Chromium, ffmpeg, fonts, display configuration, locale, timezone, viewport, and device scale.
+Local runs are development/debugging only.
 
-The generated MP4 should be retained as a job artifact or otherwise persisted by the cloud execution environment for review.
+## Showcase pass condition
 
-Local runs are useful for development and debugging, but they are not the canonical north-star artifact.
-
-## Success criteria
-
-The north-star video passes when:
-
-- A viewer can understand the workflow without additional explanation.
-- The video does not look like raw Playwright automation.
-- No cursor teleportation is visible.
-- No unexplained application state changes occur.
-- Customer and Admin sessions are genuinely independent.
-- Side-by-side presentation clearly communicates cross-user behavior.
-- Real application behavior produces the demonstrated results.
-- Technical evidence, when used, clearly corresponds to the user action that caused it.
-- Narration is synchronized with the corresponding scenes.
-- Voice narration is audible and intelligible.
-- Captions remain readable and unobtrusive.
-- Application audio is preserved where useful.
-- No sensitive information appears.
-- There is no unnecessary dead time.
-- The successful outcome is visually obvious.
-- The final MP4 contains both video and audio once audio support is implemented.
-- The workflow can be reproduced automatically from a clean starting state.
-- The canonical video was generated in GitHub Actions or on a reproducible cloud machine.
-- The cloud job retains the generated video artifact for review.
-
-Any change to cursor movement, zooming, captions, narration, audio, multi-window behavior, technical evidence, scene orchestration, recording, or FFmpeg export should be evaluated against this showcase.
+The showcase passes only when all positive and negative assertions pass, persistence after reload is proven, the final evidence bundle matches the exact source SHA, required media validation passes, and human review confirms readability, pacing, role clarity, caption placement, and narration accuracy.
