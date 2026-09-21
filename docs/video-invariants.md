@@ -138,6 +138,19 @@ They are split into two groups:
 - Notifications and unrelated UI should not appear in the recording.
 - Editing must not imply application behavior that did not actually occur.
 
+### Recording execution environment
+
+- Canonical video recordings should be produced on a cloud machine or in a GitHub Actions environment rather than depending on a developer's local workstation.
+- GitHub Actions should be the preferred environment for deterministic CI-generated evidence when the workflow can run non-interactively.
+- A cloud machine should be used when the recording requires capabilities that are impractical in a standard GitHub Actions runner, such as a persistent graphical desktop, native browser DevTools windows, system audio capture, or longer interactive sessions.
+- Local recording may be used for development and debugging, but it should not be treated as the canonical evidence artifact.
+- The recording environment should be reproducible from version-controlled configuration.
+- Node.js, Playwright/Chromium, ffmpeg, fonts, display settings, locale, timezone, viewport, device scale, and other rendering-sensitive dependencies should be explicitly controlled.
+- Cloud and GitHub Actions recordings should avoid environment-specific UI, notifications, credentials, machine names, or other host details leaking into the video.
+- The same scenario should produce materially equivalent evidence regardless of which supported cloud runner executes it.
+- Generated video artifacts should be retained by the cloud job or GitHub Actions workflow so they can be reviewed and attached to PRs or other evidence records.
+- Recording failures in the cloud environment should fail the job rather than publishing incomplete or misleading evidence.
+
 ### Output quality and reproducibility
 
 - The recording viewport, browser zoom, and device scale should remain consistent throughout a scene.
