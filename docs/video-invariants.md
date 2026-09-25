@@ -83,6 +83,23 @@ A requirement becomes Verified only when the repository retains machine-verifiab
 - Important final states must remain visible for at least two seconds.
 - Long waits may be shortened only when doing so does not change the apparent event order or product behavior.
 
+### Capture completeness
+
+- Evidence coverage is defined by the acceptance criteria, not by document or viewport dimensions.
+- A successful `fullPage` screenshot, viewport screenshot, pixel-height check, or Playwright command does not by itself prove that all relevant UI was captured.
+- Recording and screenshot scenarios must identify the actual scrolling surface, including nested overflow containers, when relevant content does not scroll with the document.
+- Before a final screenshot or scene is accepted, assert an acceptance-relevant boundary state or element that proves the required content was reached or exposed.
+- A scenario may scroll the relevant container, capture that container directly, or temporarily expand a scroll region for a still image, provided the result remains truthful and does not imply product behavior that did not occur.
+- Final artifacts must be inspected for clipping, truncation, hidden required states, and overlays that obscure evidence.
+
+### Comparative evidence
+
+- Before/after or baseline/candidate evidence must resolve both sides to exact immutable revisions before capture.
+- Mutable branch names may be used to discover revisions, but the retained evidence identity must use exact SHAs or equivalent immutable source identifiers.
+- Both sides of a comparison must use the same scenario intent, presentation profile, viewport/device settings, and deterministic data assumptions unless a declared difference is itself part of the evidence.
+- Each revision must run in isolated execution state. Do not rely on repeated branch switching inside one generated or cached application workspace when state can survive across revisions.
+- Comparative artifacts must clearly identify which revision each artifact represents.
+
 ### Multi-user and synchronization
 
 - Each user or role must use a separate browser context unless the scenario explicitly proves a single-session behavior.
