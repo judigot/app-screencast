@@ -42,6 +42,14 @@ Every acceptance criterion that requires evidence must map to:
 
 Video is supporting evidence, not the sole source of truth for nonvisual behavior.
 
+## Comparative evidence
+
+When a bundle represents a before/after or baseline/candidate comparison, it must identify both immutable source revisions and associate every comparative artifact with the revision that produced it.
+
+Comparative capture must preserve equivalent scenario intent, presentation settings, and deterministic data assumptions unless a declared difference is part of the evidence contract. The two revisions must execute in isolated workspaces so generated files, caches, dependencies, or other mutable state from one side cannot contaminate the other.
+
+A future manifest may represent this with fields such as `baselineSha` and `candidateSha`, or with explicit per-artifact source identities. The exact schema remains planned, but mutable branch names alone are not sufficient provenance.
+
 ## Publication safety
 
 Redaction must occur before evidence is published.
